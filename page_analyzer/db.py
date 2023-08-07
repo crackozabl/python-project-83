@@ -16,26 +16,49 @@ def stub_url(n):
             200)
 
 
-def get_urls(conn):
+def get_urls(conn, fetch_check=False):
     with conn.cursor(cursor_factory=extras.NamedTupleCursor) as cur:
-        cur.execute('SELECT id, name, created_at FROM urls ORDER BY created_at DESC;')
-        result = cur.fetchall()
+        if fetch_check:
+            cur.execute(
+                '''
+                SELECT DISTINCT ON (urls.id)
+                    urls.id,
+                    name,
+                    urls.created_at,
+                    url_checks.created_at as last_check,
+                    url_checks.status_code as last_status
+                FROM urls LEFT JOIN (
+                        SELECT id, url_id, created_at, status_code
+                        FROM url_checks
+                        ORDER BY created_at DESC) as url_checks
+                ON urls.id = url_checks.url_id
+                ORDER BY urls.id DESC;
+                ''')
 
-        logging.debug(f'urls result: {result}')
+            result = cur.fetchall()
 
-        return result
+            logging.debug(f'urls result: {result}')
 
-    return [stub_url(i) for i in range(10)]
+            return result
+        else:
+            cur.execute(
+                'SELECT id, name, created_at FROM urls ORDER BY created_at DESC;')
+
+            result = cur.fetchall()
+
+            logging.debug(f'urls result: {result}')
+
+            return result
 
 
 def set_url(conn, name):
     with conn.cursor(cursor_factory=extras.NamedTupleCursor) as cur:
         cur.execute('INSERT INTO urls (name, created_at) VALUES (%s, %s) RETURNING id;',
                     (name, datetime.now()))
-        id = cur.fetchone()
+        result = cur.fetchone()
         conn.commit()
 
-    return id
+    return result.id
 
 
 def get_url(conn, id):
@@ -56,5 +79,32 @@ def get_url_by_name(conn, name):
             (name,))
 
         result = cur.fetchone()
+
+        return result
+
+
+def set_url_check(conn, url_id, status_code):
+    with conn.cursor(cursor_factory=extras.NamedTupleCursor) as cur:
+        cur.execute(
+            '''
+            INSERT INTO url_checks (url_id, created_at, status_code)
+            VALUES (%s, %s, %s);
+            ''',
+            (url_id, datetime.now(), status_code))
+
+        conn.commit()
+
+
+def get_url_checks(conn, url_id):
+    with conn.cursor(cursor_factory=extras.NamedTupleCursor) as cur:
+        cur.execute(
+            '''
+            SELECT id, url_id, status_code, h1,title, description, created_at
+            FROM url_checks
+            WHERE url_id = %s;
+            ''',
+            (url_id,))
+
+        result = cur.fetchall()
 
         return result
