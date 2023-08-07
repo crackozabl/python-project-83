@@ -1,10 +1,11 @@
-DROP TABLE urls;
+DROP TABLE IF EXISTS url_checks CASCADE;
+DROP TABLE IF EXISTS urls CASCADE;
+
 CREATE TABLE urls (
     id integer primary key generated always as identity,
     name VARCHAR(255),
     created_at timestamp
 );
-DROP TABLE url_checks;
 
 CREATE TABLE url_checks (
     id integer primary key generated always as identity,

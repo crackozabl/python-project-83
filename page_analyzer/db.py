@@ -7,13 +7,13 @@ Url = namedtuple('Url',
                  ['id', 'name', 'created_at', 'last_check', 'last_status'])
 
 
-def stub_url(n):
-    return Url(
-            n,
-            f'http://www.google{n}.com',
-            f'2020-01-0{n} 00:00:00',
-            f'2020-01-0{n} 00:00:00',
-            200)
+# def stub_url(n):
+#     return Url(
+#             n,
+#             f'http://www.google{n}.com',
+#             f'2020-01-0{n} 00:00:00',
+#             f'2020-01-0{n} 00:00:00',
+#             200)
 
 
 def get_urls(conn, fetch_check=False):
