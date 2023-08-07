@@ -42,7 +42,11 @@ def get_urls(conn, fetch_check=False):
             return result
         else:
             cur.execute(
-                'SELECT id, name, created_at FROM urls ORDER BY created_at DESC;')
+                '''
+                SELECT id, name, created_at
+                FROM urls
+                ORDER BY created_at DESC;
+                ''')
 
             result = cur.fetchall()
 
@@ -53,8 +57,12 @@ def get_urls(conn, fetch_check=False):
 
 def set_url(conn, name):
     with conn.cursor(cursor_factory=extras.NamedTupleCursor) as cur:
-        cur.execute('INSERT INTO urls (name, created_at) VALUES (%s, %s) RETURNING id;',
-                    (name, datetime.now()))
+        cur.execute(
+            '''
+            INSERT INTO urls (name, created_at)
+            VALUES (%s, %s) RETURNING id;
+            ''',
+            (name, datetime.now()))
         result = cur.fetchone()
         conn.commit()
 
