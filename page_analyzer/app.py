@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
+from dotenv import load_dotenv
 
 
 app = Flask(__name__)
@@ -6,4 +7,4 @@ app = Flask(__name__)
 
 @app.route('/', methods=['GET', 'POST'])
 def get():
-    return 'hello world', 200
+    return render_template('index.html')
