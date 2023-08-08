@@ -5,6 +5,7 @@ import psycopg2
 import logging
 import page_analyzer.db as db
 import requests
+from urllib.parse import urlparse
 
 load_dotenv()
 app = Flask(__name__)
@@ -28,13 +29,14 @@ def urls():
     if request.method == 'POST':
         logging.debug('POST request received')
         conn = get_connection()
-        url = db.get_url_by_name(conn, request.form['url'])
+        normalized_url = normalize_url(request.form['url'])
+        url = db.get_url_by_name(conn, normalized_url)
 
         if url:
             flash('Страница уже существует')
             return redirect(url_for('url', id=url.id))
         else:
-            id = db.set_url(conn, request.form['url'])
+            id = db.set_url(conn, normalized_url)
             flash('Страница успешно добавлена')
             return redirect(url_for('url', id=id))
 
@@ -64,9 +66,15 @@ def check(id):
     if url:
         check = check_url(url)
         db.set_url_check(conn, id, check)
+        flash('Страница успешно проверена')
         return redirect(url_for('url', id=id))
     else:
         return 'Not found', 404
+
+
+def normalize_url(url):
+    parse_result = urlparse(url)
+    return f'{parse_result.scheme}://{parse_result.netloc}'
 
 
 def check_url(url):
