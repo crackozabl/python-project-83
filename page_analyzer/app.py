@@ -6,6 +6,7 @@ import logging
 import page_analyzer.db as db
 import requests
 from urllib.parse import urlparse
+import validators
 
 load_dotenv()
 app = Flask(__name__)
@@ -20,7 +21,7 @@ def get_connection():
 
 
 @app.route('/', methods=['GET', 'POST'])
-def get():
+def index():
     return render_template('index.html')
 
 
@@ -29,7 +30,13 @@ def urls():
     if request.method == 'POST':
         logging.debug('POST request received')
         conn = get_connection()
-        normalized_url = normalize_url(request.form['url'])
+        url_name = request.form['url']
+        if not is_valid_url(url_name) is True:
+
+            flash('Некорректный URL')
+            return redirect(url_for('index'))
+
+        normalized_url = normalize_url(url_name)
         url = db.get_url_by_name(conn, normalized_url)
 
         if url:
@@ -65,6 +72,7 @@ def check(id):
 
     if url:
         check = check_url(url)
+
         db.set_url_check(conn, id, check)
         flash('Страница успешно проверена')
         return redirect(url_for('url', id=id))
@@ -75,6 +83,10 @@ def check(id):
 def normalize_url(url):
     parse_result = urlparse(url)
     return f'{parse_result.scheme}://{parse_result.netloc}'
+
+
+def is_valid_url(url):
+    return validators.url(url)
 
 
 def check_url(url):
