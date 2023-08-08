@@ -31,10 +31,11 @@ def urls():
         logging.debug('POST request received')
         conn = get_connection()
         url_name = request.form['url']
+
         if not is_valid_url(url_name) is True:
 
             flash('Некорректный URL')
-            return redirect(url_for('index'))
+            return render_template('index.html'), 422
 
         normalized_url = normalize_url(url_name)
         url = db.get_url_by_name(conn, normalized_url)
