@@ -91,14 +91,15 @@ def get_url_by_name(conn, name):
         return result
 
 
-def set_url_check(conn, url_id, status_code):
+def set_url_check(conn, url_id, status_code, h1, title, description):
     with conn.cursor(cursor_factory=extras.NamedTupleCursor) as cur:
         cur.execute(
             '''
-            INSERT INTO url_checks (url_id, created_at, status_code)
-            VALUES (%s, %s, %s);
+            INSERT INTO url_checks
+            (url_id, created_at, status_code, h1, title, description)
+            VALUES (%s, %s, %s, %s, %s, %s);
             ''',
-            (url_id, datetime.now(), status_code))
+            (url_id, datetime.now(), status_code, h1, title, description))
 
         conn.commit()
 
