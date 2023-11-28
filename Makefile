@@ -3,7 +3,7 @@ install:
 
 build:
 	env
-	psql -a -d $DATABASE_URL -f database.sql
+	psql -a -d $$DATABASE_URL -f database.sql
 
 dev:
 	poetry run flask --app page_analyzer:app run --debug
