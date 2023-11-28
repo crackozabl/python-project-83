@@ -37,7 +37,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install poetry
           env
-          psql -a -d $DATABASE_URL -f database.sql
+          psql $DATABASE_URL -a  -f database.sql
           make build
         env:
           DATABASE_URL: ${{ vars.DATABASE_URL }}
