@@ -2,6 +2,7 @@ install:
 	poetry install
 
 build:
+	env
 	psql -a -d $DATABASE_URL -f database.sql
 
 dev:
