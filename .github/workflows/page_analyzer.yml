@@ -29,7 +29,6 @@ jobs:
           postgresql db: postgres
           postgresql user: postgres
 
-
       - name: Start Postgresql
         run: sudo systemctl start postgresql
 
