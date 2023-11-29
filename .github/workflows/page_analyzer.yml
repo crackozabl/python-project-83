@@ -26,6 +26,10 @@ jobs:
         with:
           postgresql version: '14'
           postgresql password: postgres
+          postgresql db: postgres
+          postgresql user: postgres
+          postgresql password: postgres
+
 
       - name: Start Postgresql
         run: sudo systemctl start postgresql
@@ -35,7 +39,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install poetry
           env
-          psql $DATABASE_URL -a -f database.sql
+          psql postgres://postgres:postgres@localhost:5432/postgres -a -f database.sql
         env:
           DATABASE_URL: ${{ vars.DATABASE_URL }}
 
