@@ -28,7 +28,6 @@ jobs:
           postgresql password: postgres
           postgresql db: postgres
           postgresql user: postgres
-          postgresql password: postgres
 
 
       - name: Start Postgresql
@@ -39,7 +38,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install poetry
           env
-          psql postgres://postgres:postgres@localhost:5432/postgres -a -f database.sql
+          psql $DATABASE_URL -a -f database.sql
         env:
           DATABASE_URL: ${{ vars.DATABASE_URL }}
 
