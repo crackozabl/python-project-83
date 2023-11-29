@@ -28,8 +28,6 @@ jobs:
           postgresql password: postgres
           postgresql db: postgres
           postgresql user: postgres
-          postgresql password: postgres
-
 
       - name: Start Postgresql
         run: sudo systemctl start postgresql
