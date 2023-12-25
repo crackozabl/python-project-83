@@ -1,24 +1,19 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import \
+        Flask, render_template, request, \
+        redirect, url_for, flash, abort
 from dotenv import load_dotenv
 from os import getenv
-import psycopg2
-import logging
 import page_analyzer.db as db
-import requests
-from urllib.parse import urlparse
-import validators
-from bs4 import BeautifulSoup
+from page_analyzer.utils import \
+        is_valid_url, normalize_url,\
+        parse_page, check_url
+
+app = Flask(__name__)
 
 load_dotenv()
-app = Flask(__name__)
+
 app.config['SECRET_KEY'] = getenv('SECRET_KEY')
-
-CONNECTION_STRING = getenv('DATABASE_URL')
-
-
-def get_connection():
-    conn = psycopg2.connect(CONNECTION_STRING)
-    return conn
+app.config['DATABASE_URL'] = getenv('DATABASE_URL')
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -26,56 +21,57 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/urls', methods=['GET', 'POST'])
-def urls():
-    if request.method == 'POST':
-        logging.debug('POST request received')
-        conn = get_connection()
-        url_name = request.form['url']
+@app.route('/urls', methods=['GET'])
+def get_urls():
+    conn = db.get_connection(app.config)
+    urls = db.get_urls_with_checks(conn)
+    db.close(conn)
 
-        if not is_valid_url(url_name) is True:
+    return render_template('urls.html', urls=urls)
 
-            flash('Некорректный URL')
-            return render_template('index.html'), 422
 
-        normalized_url = normalize_url(url_name)
-        url = db.get_url_by_name(conn, normalized_url)
+@app.route('/urls', methods=['POST'])
+def post_urls():
+    url_name = request.form['url']
 
-        if url:
-            flash('Страница уже существует')
-            return redirect(url_for('url', id=url.id))
-        else:
-            id = db.set_url(conn, normalized_url)
-            flash('Страница успешно добавлена')
-            return redirect(url_for('url', id=id))
+    if not is_valid_url(url_name) is True:
+        flash('Некорректный URL', 'danger')
+        return render_template('index.html'), 422
 
-    elif request.method == 'GET':
-        conn = get_connection()
-        urls = db.get_urls(conn, fetch_check=True)
+    normalized_url = normalize_url(url_name)
 
-        logging.debug('GET request received')
-        return render_template('urls.html', urls=urls)
+    conn = db.get_connection(app.config)
+    url = db.get_url_by_name(conn, normalized_url)
+
+    if url:
+        flash('Страница уже существует', 'info')
+        db.close(conn)
+        return redirect(url_for('url', id=url.id))
     else:
-        return 'Not implemented', 404
+        id = db.set_url(conn, normalized_url)
+        db.close(conn)
+        flash('Страница успешно добавлена', 'success')
+        return redirect(url_for('url', id=id))
 
 
 @app.route('/urls/<int:id>', methods=['GET'])
 def url(id):
-    conn = get_connection()
+    conn = db.get_connection(app.config)
     url = db.get_url(conn, id)
     checks = db.get_url_checks(conn, id)
+    db.close(conn)
     return render_template('url.html', url=url, checks=checks)
 
 
 @app.route('/urls/<int:id>/checks', methods=['POST'])
 def check(id):
-    conn = get_connection()
+    conn = db.get_connection(app.config)
     url = db.get_url(conn, id)
 
     if url:
         try:
             check = check_url(url)
-        except requests.exceptions.RequestException:
+        except Exception:
             flash('Произошла ошибка при проверке', 'danger')
             return redirect(url_for('url', id=id))
 
@@ -85,44 +81,23 @@ def check(id):
                              check['h1'],
                              check['title'],
                              check['description'])
-            flash('Страница успешно проверена')
+            flash('Страница успешно проверена', 'success')
         else:
-            flash('Произошла ошибка при проверке')
+            flash('Произошла ошибка при проверке', 'danger')
 
+        db.close(conn)
         return redirect(url_for('url', id=id))
     else:
-        return 'Not found', 404
+        db.close(conn)
+        return abort(404)
 
 
-def normalize_url(url):
-    parse_result = urlparse(url)
-    return f'{parse_result.scheme}://{parse_result.netloc}'
+@app.errorhandler(404)
+def not_found(error):
+    return render_template('404.html'), 404
+    
+@app.errorhandler(500)
+def server_error(error):
+    return render_template('500.html'), 500
 
 
-def is_valid_url(url):
-    return validators.url(url)
-
-
-def parse_page(response):
-    status_code = response.status_code
-    page = response.text
-    soup = BeautifulSoup(page, 'html.parser')
-    title = soup.find('title').text if soup.find('title') else ''
-    h1 = soup.find('h1').text if soup.find('h1') else ''
-    description = soup.find('meta', attrs={'name': 'description'})
-    if description:
-        description = description['content']
-    else:
-        description = ''
-    return {
-        'status_code': status_code,
-        'title': title[:255],
-        'h1': h1[:255],
-        'description': description[:255],
-    }
-
-
-def check_url(url):
-    response = requests.get(url.name)
-    response.raise_for_status()
-    return parse_page(response)

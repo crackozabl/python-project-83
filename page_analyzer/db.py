@@ -1,68 +1,67 @@
 from collections import namedtuple
 from datetime import datetime
 from psycopg2 import extras
+import psycopg2
 import logging
 
 Url = namedtuple('Url',
-                 ['id', 'name', 'created_at', 'last_check', 'last_status'])
+                 ['id', 'name', 'created_at'])
 
+def get_connection(config):
+    conn = psycopg2.connect(config['DATABASE_URL'])
+    return conn
 
-# def stub_url(n):
-#     return Url(
-#             n,
-#             f'http://www.google{n}.com',
-#             f'2020-01-0{n} 00:00:00',
-#             f'2020-01-0{n} 00:00:00',
-#             200)
+def close(conn):
+    conn.close()
 
-
-def get_urls(conn, fetch_check=False):
+def get_urls_with_checks(conn):
     with conn.cursor(cursor_factory=extras.NamedTupleCursor) as cur:
-        if fetch_check:
-            cur.execute(
-                '''
-                SELECT DISTINCT ON (urls.id)
-                    urls.id,
-                    name,
-                    urls.created_at,
-                    url_checks.created_at as last_check,
-                    url_checks.status_code as last_status
-                FROM urls LEFT JOIN (
-                        SELECT id, url_id, created_at, status_code
-                        FROM url_checks
-                        ORDER BY created_at DESC) as url_checks
-                ON urls.id = url_checks.url_id
-                ORDER BY urls.id DESC;
-                ''')
+        urls = get_urls(conn)
+        cur.execute('''
+            SELECT DISTINCT ON (url_id) 
+                url_id,
+                created_at as last_check,
+                status_code as last_status
+            FROM url_checks
+            ORDER BY url_id DESC, id DESC''')
+        checks = cur.fetchall()
 
-            result = cur.fetchall()
+        last_checks = { check.url_id: check for check in checks }
 
-            logging.debug(f'urls result: {result}')
+        result = []
 
-            return result
-        else:
-            cur.execute(
-                '''
-                SELECT id, name, created_at
-                FROM urls
-                ORDER BY created_at DESC;
-                ''')
+        for url in urls:
+            check = last_checks.get(url.id)
+            url_with_check = {
+                        'id': url.id,
+                        'name': url.name,
+                        'created_at': url.created_at,
+                        'last_check': check.last_check if check else '',
+                        'last_status': check.last_status if check else ''
+                    }
+            result.append(url_with_check)
 
-            result = cur.fetchall()
+        return result
 
-            logging.debug(f'urls result: {result}')
+def get_urls(conn):
+    with conn.cursor(cursor_factory=extras.NamedTupleCursor) as cur:
+        cur.execute(
+            '''
+            SELECT id, name, created_at
+            FROM urls
+            ORDER BY created_at DESC;
+            ''')
 
-            return result
-
+        return cur.fetchall()
 
 def set_url(conn, name):
     with conn.cursor(cursor_factory=extras.NamedTupleCursor) as cur:
         cur.execute(
             '''
-            INSERT INTO urls (name, created_at)
-            VALUES (%s, %s) RETURNING id;
+            INSERT INTO urls (name)
+            VALUES (%s) RETURNING id;
             ''',
-            (name, datetime.now()))
+            (name,))
         result = cur.fetchone()
         conn.commit()
 
@@ -96,10 +95,10 @@ def set_url_check(conn, url_id, status_code, h1, title, description):
         cur.execute(
             '''
             INSERT INTO url_checks
-            (url_id, created_at, status_code, h1, title, description)
-            VALUES (%s, %s, %s, %s, %s, %s);
+            (url_id, status_code, h1, title, description)
+            VALUES (%s, %s, %s, %s, %s);
             ''',
-            (url_id, datetime.now(), status_code, h1, title, description))
+            (url_id, status_code, h1, title, description))
 
         conn.commit()
 

@@ -2,7 +2,7 @@
 name = "hexlet-code"
 version = "0.1.0"
 description = "flask app"
-authors = ["AO <noemails@to.me>"]
+authors = ["ao <noemails@to.me>"]
 readme = "README.md"
 packages = [{include = "page_analyzer"}]
 
