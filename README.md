@@ -12,4 +12,4 @@ make start
 ```
 
 
-[![https://flask-app-mbkt.onrender.com](https://flask-app-mbkt.onrender.com/)]
+[https://flask-app-mbkt.onrender.com](https://flask-app-mbkt.onrender.com/)
