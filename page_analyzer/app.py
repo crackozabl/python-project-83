@@ -1,12 +1,12 @@
 from flask import \
-        Flask, render_template, request, \
-        redirect, url_for, flash, abort
+    Flask, render_template, request, \
+    redirect, url_for, flash, abort
 from dotenv import load_dotenv
 from os import getenv
 import page_analyzer.db as db
 from page_analyzer.utils import \
-        is_valid_url, normalize_url,\
-        parse_page, check_url
+    is_valid_url, normalize_url, \
+    check_url
 
 app = Flask(__name__)
 
@@ -95,9 +95,8 @@ def check(id):
 @app.errorhandler(404)
 def not_found(error):
     return render_template('404.html'), 404
-    
+
+
 @app.errorhandler(500)
 def server_error(error):
     return render_template('500.html'), 500
-
-

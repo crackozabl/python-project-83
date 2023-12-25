@@ -1,47 +1,51 @@
 from collections import namedtuple
-from datetime import datetime
 from psycopg2 import extras
 import psycopg2
-import logging
 
 Url = namedtuple('Url',
                  ['id', 'name', 'created_at'])
+
 
 def get_connection(config):
     conn = psycopg2.connect(config['DATABASE_URL'])
     return conn
 
+
 def close(conn):
     conn.close()
+
 
 def get_urls_with_checks(conn):
     with conn.cursor(cursor_factory=extras.NamedTupleCursor) as cur:
         urls = get_urls(conn)
-        cur.execute('''
-            SELECT DISTINCT ON (url_id) 
+        cur.execute(
+            '''
+            SELECT DISTINCT ON (url_id)
                 url_id,
                 created_at as last_check,
                 status_code as last_status
             FROM url_checks
-            ORDER BY url_id DESC, id DESC''')
+            ORDER BY url_id DESC, id DESC;
+            ''')
         checks = cur.fetchall()
 
-        last_checks = { check.url_id: check for check in checks }
+        last_checks = {check.url_id: check for check in checks}
 
         result = []
 
         for url in urls:
             check = last_checks.get(url.id)
             url_with_check = {
-                        'id': url.id,
-                        'name': url.name,
-                        'created_at': url.created_at,
-                        'last_check': check.last_check if check else '',
-                        'last_status': check.last_status if check else ''
-                    }
+                'id': url.id,
+                'name': url.name,
+                'created_at': url.created_at,
+                'last_check': check.last_check if check else '',
+                'last_status': check.last_status if check else ''
+            }
             result.append(url_with_check)
 
         return result
+
 
 def get_urls(conn):
     with conn.cursor(cursor_factory=extras.NamedTupleCursor) as cur:
@@ -53,6 +57,7 @@ def get_urls(conn):
             ''')
 
         return cur.fetchall()
+
 
 def set_url(conn, name):
     with conn.cursor(cursor_factory=extras.NamedTupleCursor) as cur:
