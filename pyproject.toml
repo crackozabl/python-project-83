@@ -20,3 +20,20 @@ requests="^2.28.1"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+
+[project]
+name = "hexlet-code"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "flake8>=7.1.1",
+    "flask>=3.1.0",
+    "gunicorn>=23.0.0",
+    "psycopg2-binary>=2.9.10",
+    "python-dotenv>=1.0.1",
+    "validators>=0.34.0",
+]
+
