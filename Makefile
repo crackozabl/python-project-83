@@ -14,8 +14,9 @@ dev: build
 
 PORT ?= 8000
 start: 
-	curl -LsSf https://astral.sh/uv/install.sh | sh
-	/opt/render/.local/bin/uv run gunicorn -w 5 -b 0.0.0.0:$(PORT) page_analyzer:app
+	#curl -LsSf https://astral.sh/uv/install.sh | sh
+	#/opt/render/.local/bin/uv run gunicorn -w 5 -b 0.0.0.0:$(PORT) page_analyzer:app
+	gunicorn -w 5 -b 0.0.0.0:$(PORT) page_analyzer:app
 
 lint:
 	flake8
