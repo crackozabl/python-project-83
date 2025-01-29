@@ -16,7 +16,10 @@ PORT ?= 8000
 start: 
 	#curl -LsSf https://astral.sh/uv/install.sh | sh
 	#/opt/render/.local/bin/uv run gunicorn -w 5 -b 0.0.0.0:$(PORT) page_analyzer:app
-	.venv/bin/gunicorn -w 5 -b 0.0.0.0:$(PORT) page_analyzer:app
+	#gunicorn task_manager.asgi:application -k uvicorn.workers.UvicornWorker
+	gunicorn -w 5 -b 0.0.0.0:$(PORT) page_analyzer:app
+
+
 
 lint:
 	flake8
